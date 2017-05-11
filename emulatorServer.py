@@ -1,22 +1,27 @@
 import urllib2
 import gp_emulator
 from glob import glob
+import os
 
 class emulatorServer(object):
   '''
   helper class for accessing and using emulators
   '''
 
-  def __init__(self,model='sail',database='./emulators'):
-    self.base = 'https://github.com/profLewis/emulatorServer'
-    self.url = self.base + '/' + 'emulators' + '/' + model
+  def __init__(self,model='sail',database='my_data'):
+    self.base = 'https://www.dropbox.com/sh/ljykiruevdakfh1/AADk4ywAvzyIleMy0c_e5dJNa?dl=0'
     # local storage
     self.database = database + '/' + model 
-    
+    # make directory if it doesnt exist
+    if not os.path.exists(self.database):
+      os.makedirs(self.database)
+ 
     # get a list of files available
     self.localFiles = glob(self.database+'/*.npz')
     try:
-      self.remoteFiles = urllib2.urlopen(self.url) 
+      f = urllib2.urlopen(self.base).readlines()
+
+      self.remoteFiles = urllib2.urlopen(self.base) 
     except:
       print 'error accessing',self.url
       print 'using only local files from',self.database

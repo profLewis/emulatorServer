@@ -2,13 +2,14 @@ import urllib2
 import gp_emulator
 from glob import glob
 import os
+from bs4 import BeautifulSoup
 
 class emulatorServer(object):
   '''
   helper class for accessing and using emulators
   '''
 
-  def __init__(self,model='sail',database='my_data'):
+  def __init__(self,model='sail',database='my_data',verbose=True):
     self.base = 'https://www.dropbox.com/sh/ljykiruevdakfh1/AADk4ywAvzyIleMy0c_e5dJNa?dl=0'
     # local storage
     self.database = database + '/' + model 
@@ -19,15 +20,22 @@ class emulatorServer(object):
     # get a list of files available
     self.localFiles = glob(self.database+'/*.npz')
     try:
-      f = urllib2.urlopen(self.base).readlines()
-
-      self.remoteFiles = urllib2.urlopen(self.base) 
+      txt = urllib2.urlopen(self.base).readlines()
+      # hack for dropbox interface
+      mostInfo = [ i.split('url')[-1].split('"')[2] for i in ' '.join(txt).split('Name') ]
+      urls = []
+      for x in mostInfo:
+        if 'dropbox' in x:
+          urls.append(x)
+      filenames = [u.split('/')[-1].split('?')[0] for u in urls]
+      self.remoteFiles = urls
+      self.remoteFilenames = filenames
     except:
       print 'error accessing',self.url
       print 'using only local files from',self.database
 
 
-  def grab_emulators (self, sza, vza, raa, i\
+  def grab_emulators (self, sza, vza, raa, \
                     verbose=True,emulator_home = "emus/"):
     import glob
     # Locate all available emulators...

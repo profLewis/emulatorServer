@@ -2,6 +2,7 @@ import urllib2
 import gp_emulator
 from glob import glob
 import os
+import bs4
 from bs4 import BeautifulSoup
 
 class emulatorServer(object):
@@ -19,14 +20,41 @@ class emulatorServer(object):
  
     # get a list of files available
     self.localFiles = glob(self.database+'/*.npz')
+
+    # get remote files names from self.base
+    try:
+      self.urlType(self.base)()
+    except:
+      self.remoteFiles = []
+      self.remoteFilenames = []
+
+
+
+  def urlType(self,base):
+    if base.find('www.dropbox.com'):
+      return self.urlFromDropbox
+    else:
+      return None
+
+
+  def urlFromDropbox(self):
+    urls = []
     try:
       txt = urllib2.urlopen(self.base).readlines()
-      # hack for dropbox interface
-      mostInfo = [ i.split('url')[-1].split('"')[2] for i in ' '.join(txt).split('Name') ]
-      urls = []
-      for x in mostInfo:
-        if 'dropbox' in x:
-          urls.append(x)
+      soup = BeautifulSoup(' '.join(txt), 'html.parser')
+      html = BeautifulSoup(soup.find_all("html")[0], 'html.parser')
+      for tag in html.children:
+        if type(tag) == bs4.element.Tag:
+          for tag1 in tag.children:
+            if tag1.name == 'script':
+              for tag2 in tag1.contents:
+                if (type(tag2) == bs4.element.NavigableString) and \
+                                           (tag2.find('dropbox.com') >= 0):
+                  for s in tag2.split('"url"'):
+                    if s.find('href') > 0:
+                      for ss in s.split('"href"'):
+                        urls.append(str(ss.split('"')[1]))
+
       filenames = [u.split('/')[-1].split('?')[0] for u in urls]
       self.remoteFiles = urls
       self.remoteFilenames = filenames
